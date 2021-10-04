@@ -22,6 +22,21 @@ class LinearSystem():
     def set_init_state(self,x0):
         self.x0 = x0
     
+    def compute_matrices(self,x,u):
+        #compute the derivatives of the dynamics
+        return self.A,self.B
+    
+    def compute_ee(self,x, ee_id=1):
+        #The end-effector for a point mass system is simply its position
+        #The ee_id is added as dummy variable, just for uniformity of notation with other systems
+        return x[:int(self.Dx/2)], None 
+    
+    def compute_Jacobian(self,x, ee_id=1):
+        #The end-effector Jacobian for a point mass system is simply an identity matrix
+        #The ee_id is added as dummy variable, just for uniformity of notation with other systems
+        return np.eye(int(self.Dx/2)) 
+    
+    
     def step(self, x, u):
         return self.A.dot(x) + self.B.dot(u)
     
