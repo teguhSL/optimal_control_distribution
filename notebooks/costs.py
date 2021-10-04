@@ -274,3 +274,33 @@ class RobotSphereCollisionCost():
         self.Lxu = np.zeros((14, 7))
         return self.Lx, self.Lxx
     
+class CostModelBound:
+    """
+    This cost is to keep within the joint limits
+    """
+    def __init__(self, sys, bounds, weight=1., margin = 1e-3): 
+        self.bounds = bounds
+        self.dof = bounds.shape[1]
+        self.Dx, self.Du = sys.Dx, sys.Du
+        self.identity = np.eye(self.dof)
+        self.margin = margin
+        self.weight = weight
+        
+    def calc(self, x, u):
+        self.res = ((x - self.bounds[0]) * (x < self.bounds[0]) +  \
+                    (x - self.bounds[1]) * ( x > self.bounds[1]))
+        self.L = 0.5*self.weight*(self.res.dot(self.res))
+        return
+    
+    def calcDiff(self, x, u, recalc = True):
+        if recalc:
+            self.calc(x,u)        
+        stat = (x - self.margin < self.bounds[0]) + \
+                (x + self.margin > self.bounds[1])
+        self.J = stat*self.identity
+        self.Lx = self.weight*self.J.dot(self.res)
+        self.Lxx = self.weight*self.J.T.dot(self.J)
+        self.Lu  = np.zeros(self.Du)
+        self.Lxu = np.zeros((self.Dx, self.Du))
+        self.Luu  = np.zeros((self.Du, self.Du))
+        return  

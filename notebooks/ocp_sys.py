@@ -119,6 +119,36 @@ class SecondUnicycle():
             xs += [x_cur]
         return np.array(xs)
     
+    def plot(self, ax, state, rad = 0.4, head_width = 0.3, head_length = 0.3, arrow_length = 1e-4, color_circle = (0,0,1,1), color_arrow=(1,0,0,1)):
+        x, y, theta = state[0], state[1], state[2]
+        arrow_pos = np.array([x + rad*np.cos(theta), y + rad*np.sin(theta)])
+        arrow_dpos = np.array([arrow_length*np.cos(theta), arrow_length*np.sin(theta)])
+
+        circle = plt.Circle((x,y), radius=rad, fill=False, color=color_circle)
+        ax.add_patch(circle)
+        arrow = ax.arrow(arrow_pos[0]+arrow_dpos[0], arrow_pos[1], arrow_dpos[0], arrow_dpos[1], fill=True, head_width=head_width, head_length=head_length, color=color_arrow)
+        ax.set_aspect('equal')
+        return ax
+    
+    def plot_traj(self, xs, dt = 0.1, save_path=None, save_format='.pdf', dpi=500, remove_label=True, goal=None, alpha = 0.4):
+        for i,x in enumerate(xs):
+            clear_output(wait=True)
+            fig, ax = plt.subplots()
+            if goal is not None:
+                ax = self.plot(ax, goal, color_circle=(0,.8,0,alpha), color_arrow=(0,.8,0,alpha))
+
+            ax = self.plot(ax, x)
+            ax.set_xlim([-3,3])
+            ax.set_ylim([-3,3])
+                
+            if remove_label:
+                ax.xaxis.set_visible(False)
+                ax.yaxis.set_visible(False)
+            if save_path is not None:
+                plt.savefig(save_path+'_'+str(i) + save_format, dpi=dpi, bbox_inches='tight')
+            plt.show()
+            time.sleep(dt)
+    
 class Pendulum():
     def __init__(self, dt = 0.01):
         self.dt = dt
@@ -159,23 +189,34 @@ class Pendulum():
             xs += [x_cur]
         return np.array(xs)
     
-    def plot(self, x, color='k'):
+    def plot(self, x, ax = None, color='b', alpha=1.):
+        if ax is None:
+            fig, ax = plt.subplots()
         px = np.array([0, -self.l*np.sin(x[0])])
         py = np.array([0, self.l*np.cos(x[0])])
-        line = plt.plot(px, py, marker='o', color=color, lw=10, mfc='w', solid_capstyle='round')
+        line = plt.plot(px, py, marker='o', color=color, alpha=alpha, lw=10, mfc='w', solid_capstyle='round')
         xlim = [-2*self.l, 2*self.l]
-        plt.axes().set_aspect('equal')
-        plt.axis(xlim+xlim)
-        return line
+        ax.set_aspect('equal')
+        ax.set_xlim(xlim)
+        ax.set_ylim(xlim)
+        return ax
 
-    def plot_traj(self, xs, dt = 0.1, filename = None):
+    def plot_traj(self, xs, dt = 0.1, save_path=None, save_format='.pdf', dpi=500, remove_label=True, color = 'b', alpha=0.4, goal=None):
         for i,x in enumerate(xs):
             clear_output(wait=True)
-            self.plot(x)
-            if filename is not None:
-                plt.savefig('temp/fig'+str(i)+'.png')
+            fig, ax = plt.subplots()
+            if goal is not None:
+                ax = self.plot(goal, ax,color='g', alpha=alpha)
+
+            ax = self.plot(x, ax = ax, color=color)
+            if remove_label:            
+                ax.xaxis.set_visible(False)
+                ax.yaxis.set_visible(False)
+            if save_path is not None:
+                plt.savefig(save_path+'_'+str(i) + save_format, dpi=dpi, bbox_inches='tight')
             plt.show()
             time.sleep(dt)
+
     
     
 class Bicopter():
@@ -232,19 +273,41 @@ class Bicopter():
             xs += [x_cur]
         return np.array(xs)
         
-    def plot(self, x, color = 'k'):
+    def plot(self, x, ax = None, color_body = 'b', color_prop = 'r', alpha=1.):
+        if ax is None:
+            fig, ax = plt.subplots()
+
         pxs = np.array([x[0] + 0.5*self.l*np.cos(x[2]), x[0] - 0.5*self.l*np.cos(x[2])])
         pys = np.array([x[1] + 0.5*self.l*np.sin(x[2]), x[1] - 0.5*self.l*np.sin(x[2])])
-        line = plt.plot(pxs, pys, marker='o', color=color, lw=10, mfc='w', solid_capstyle='round')
-        return line
+        line = plt.plot(pxs, pys, color=color_body, lw=5, mfc='w', alpha = alpha, solid_capstyle='round')
+        
+        pxs2 = np.array([x[0] + 0.35*self.l*np.cos(x[2]) - 0.15*np.sin(x[2]), x[0] + 0.5*self.l*np.cos(x[2]) - 0.15*np.sin(x[2])])
+        pys2 = np.array([x[1] + 0.35*self.l*np.sin(x[2])+ 0.15*np.cos(x[2]), x[1] + 0.5*self.l*np.sin(x[2])+ 0.15*np.cos(x[2])])
+        line2 = plt.plot(pxs2, pys2,  color=color_prop,  alpha = alpha, lw=3, mfc='w')
 
-    def vis_traj(self, xs, dt = 0.1, axes_lim = [-5,5,-5,5]):
+        pxs3 = np.array([x[0] - 0.35*self.l*np.cos(x[2]) - 0.15*np.sin(x[2]), x[0] - 0.5*self.l*np.cos(x[2]) - 0.15*np.sin(x[2])])
+        pys3 = np.array([x[1] - 0.35*self.l*np.sin(x[2])+ 0.15*np.cos(x[2]), x[1] - 0.5*self.l*np.sin(x[2])+ 0.15*np.cos(x[2])])
+        line3 = plt.plot(pxs3, pys3,  color=color_prop,  alpha = alpha, lw=3, mfc='w')
+
+        return ax
+
+    def vis_traj(self, xs, dt = 0.1, axes_lim = [-2,2,-2,2], save_path=None, save_format='.pdf', dpi=500, remove_label=True, goal=None, alpha=0.4):
         T = len(xs)
-        for x in xs:
+        for i,x in enumerate(xs):
             clear_output(wait=True)
-            self.plot(x)
-            plt.axes().set_aspect('equal')
-            plt.axis(axes_lim)
+            fig, ax = plt.subplots()
+            if goal is not None:
+                ax = self.plot(goal, ax,color_body='g', color_prop = 'g', alpha=alpha)
+            ax = self.plot(x, ax)
+            ax.set_aspect('equal')
+            ax.set_xlim(axes_lim[:2])
+            ax.set_ylim(axes_lim[-2:])
+            if remove_label:
+                ax.xaxis.set_visible(False)
+                ax.yaxis.set_visible(False)
+            if save_path is not None:
+                plt.savefig(save_path+'_'+str(i) + save_format, dpi=dpi, bbox_inches='tight')
+            
             plt.show()
             time.sleep(dt)
             
