@@ -105,6 +105,33 @@ class ActivationCollision():
         if recalc:
             self.calc(r)
         
+        if self.d < (self.threshold):
+            self.Ar = (self.d-self.threshold)*r[:,None]/self.d
+            #self.Arr = np.eye(self.nr)*(self.d-self.threshold)/self.d + self.threshold*np.outer(r,r.T)/(self.d**3)
+            self.Arr = np.outer(r,r.T)/(self.d**2)
+            #self.Arr = np.eye(self.nr)
+        else:
+            self.Ar = np.zeros((self.nr,1))
+            self.Arr = np.zeros((self.nr,self.nr))
+        return self.Ar, self.Arr
+
+class ActivationCollisionOld():
+    def __init__(self, nr, threshold=0.3):
+        self.threshold = threshold
+        self.nr = nr
+    def calc(self,  r):
+        self.d = np.linalg.norm(r)
+
+        if self.d < self.threshold:
+            self.a = 0.5*(self.d-self.threshold)**2
+        else:
+            self.a = 0
+        return self.a
+
+    def calcDiff(self,  r, recalc=True):
+        if recalc:
+            self.calc(r)
+        
         if self.d < self.threshold:
             self.Ar = (self.d-self.threshold)*r[:,None]/self.d
             self.Arr = np.eye(self.nr)*(self.d-self.threshold)/self.d + self.threshold*np.outer(r,r.T)/(self.d**3)
@@ -112,7 +139,6 @@ class ActivationCollision():
             self.Ar = np.zeros((self.nr,1))
             self.Arr = np.zeros((self.nr,self.nr))
         return self.Ar, self.Arr
-
 
 class SphereSphereCollisionCost():
     def __init__(self, activation=None, nu=None, r_body = 0., r_obs = 0., pos_obs = np.array([0,0,0]), w= 1.):
